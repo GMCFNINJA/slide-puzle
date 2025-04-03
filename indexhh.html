@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slide Puzzle Completo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .game-wrapper {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            padding: 25px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 2.2rem;
+            font-weight: 600;
+        }
+        
+        .game-description {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 25px;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        
+        .game-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #34495e;
+            font-size: 0.9rem;
+        }
+        
+        select, button {
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+        
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 15px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .mode-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        
+        .mode-option:hover {
+            background: #e9ecef;
+        }
+        
+        .mode-option input {
+            margin-right: 8px;
+        }
+        
+        .image-upload {
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+        
+        .image-upload label {
+            display: inline-block;
+            padding: 12px 20px;
+            background: #3498db;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .image-upload label:hover {
+            background: #2980b9;
+        }
+        
+        .image-upload input {
+            display: none;
+        }
+        
+        .puzzle-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1/1;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .tile {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            background-color: #3498db;
+            border: 2px solid #2980b9;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+            box-sizing: border-box;
+            border-radius: 5px;
+        }
+        
+        .tile.highlight {
+            background-color: #e74c3c;
+            border-color: #c0392b;
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+            z-index: 10;
+        }
+        
+        .tile.empty {
+            background-color: transparent;
+            border: none;
+            cursor: default;
+        }
+        
+        .tile img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 3px;
+        }
+        
+        .win-message {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 100;
+            display: none;
+            border-radius: 10px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .win-content {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            max-width: 80%;
+        }
+        
+        .win-message h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #f1c40f;
+        }
+        
+        .win-message p {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+        }
+        
+        .win-message button {
+            background-color: #f39c12;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+        }
+        
+        .win-message button:hover {
+            background-color: #e67e22;
+        }
+        
+        .moves-counter {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 600px) {
+            .game-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .tile {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <h1>Slide Puzzle</h1>
+        <p class="game-description">Escolha o modo de jogo, embaralhe as peças e tente reorganizá-las!</p>
+        
+        <div class="mode-selector">
+            <label class="mode-option">
+                <input type="radio" name="mode" value="standard" checked> 
+                Modo Padrão
+            </label>
+            <label class="mode-option">
+                <input type="radio" name="mode" value="custom"> 
+                Modo Personalizado
+            </label>
+        </div>
+        
+        <div class="image-upload" id="imageUpload">
+            <label for="customImage">Escolha uma Imagem</label>
+            <input type="file" id="customImage" accept="image/*">
+        </div>
+        
+        <div class="game-controls">
+            <div class="control-group">
+                <label for="puzzleSize">Dificuldade:</label>
+                <select id="puzzleSize">
+                    <option value="3">3x3 (Fácil)</option>
+                    <option value="4" selected>4x4 (Médio)</option>
+                    <option value="5">5x5 (Difícil)</option>
+                    <option value="6">6x6 (Expert)</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Ações:</label>
+                <div style="display: flex; gap: 10px;">
+                    <button id="shuffleBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 3 21 3 21 8"></polyline>
+                            <line x1="4" y1="20" x2="21" y2="3"></line>
+                            <polyline points="21 16 21 21 16 21"></polyline>
+                            <line x1="15" y1="15" x2="21" y2="21"></line>
+                            <line x1="4" y1="4" x2="9" y2="9"></line>
+                        </svg>
+                        Embaralhar
+                    </button>
+                    <button id="resetBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                            <path d="M3 3v5h5"></path>
+                        </svg>
+                        Reiniciar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="puzzle-container">
+            <div class="puzzle-board" id="puzzleBoard"></div>
+            <div class="win-message" id="winMessage">
+                <div class="win-content">
+                    <h2>Parabéns!</h2>
+                    <p id="winText">Você completou o puzzle!</p>
+                    <button id="playAgainBtn">Jogar Novamente</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="moves-counter">
+            Movimentos: <span id="movesCount">0</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos do DOM
+            const puzzleBoard = document.getElementById('puzzleBoard');
+            const shuffleBtn = document.getElementById('shuffleBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const puzzleSizeSelect = document.getElementById('puzzleSize');
+            const winMessage = document.getElementById('winMessage');
+            const winText = document.getElementById('winText');
+            const playAgainBtn = document.getElementById('playAgainBtn');
+            const modeRadios = document.querySelectorAll('input[name="mode"]');
+            const imageUpload = document.getElementById('imageUpload');
+            const customImageInput = document.getElementById('customImage');
+            const movesCountDisplay = document.getElementById('movesCount');
+            
+            // Variáveis do jogo
+            let size = 4;
+            let tiles = [];
+            let emptyPos = { row: size - 1, col: size - 1 };
+            let isShuffling = false;
+            let isCustomMode = false;
+            let customImage = null;
+            let tileSize = 0;
+            let movesCount = 0;
+            let startTime = null;
+            
+            // Inicializar o jogo
+            initGame();
+            
+            // Event listeners
+            puzzleSizeSelect.addEventListener('change', function() {
+                size = parseInt(this.value);
+                initGame();
+            });
+            
+            shuffleBtn.addEventListener('click', shufflePuzzle);
+            resetBtn.addEventListener('click', initGame);
+            playAgainBtn.addEventListener('click', initGame);
+            
+            modeRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    isCustomMode = this.value === 'custom';
+                    imageUpload.style.display = isCustomMode ? 'block' : 'none';
+                    initGame();
+                });
+            });
+            
+            customImageInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        customImage = new Image();
+                        customImage.onload = function() {
+                            initGame();
+                        };
+                        customImage.src = event.target.result;
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+            
+            // Função para inicializar o jogo
+            function initGame() {
+                // Limpar o tabuleiro
+                puzzleBoard.innerHTML = '';
+                tiles = [];
+                winMessage.style.display = 'none';
+                movesCount = 0;
+                movesCountDisplay.textContent = movesCount;
+                startTime = new Date();
+                
+                // Definir o tamanho das peças
+                tileSize = 100 / size;
+                
+                // Criar as peças
+                let tileCount = size * size;
+                for (let i = 0; i < tileCount - 1; i++) {
+                    const value = i + 1;
+                    const row = Math.floor(i / size);
+                    const col = i % size;
+                    
+                    createTile(value, row, col);
+                }
+                
+                // Definir a posição vazia
+                emptyPos = { row: size - 1, col: size - 1 };
+                
+                // Se for modo personalizado e há imagem, cortar a imagem
+                if (isCustomMode && customImage) {
+                    createImageTiles();
+                }
+                
+                // Adicionar evento de clique às peças
+                setTimeout(() => {
+                    addTileClickHandlers();
+                }, 100);
+            }
+            
+            // Função para criar uma peça
+            function createTile(value, row, col) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.dataset.value = value;
+                tile.dataset.row = row;
+                tile.dataset.col = col;
+                
+                if (!isCustomMode) {
+                    tile.textContent = value;
+                    
+                    // Adicionar cor gradiente baseada no valor
+                    const hue = (value * 15) % 360;
+                    tile.style.background = `linear-gradient(135deg, hsl(${hue}, 80%, 60%), hsl(${hue + 20}, 80%, 50%))`;
+                    tile.style.borderColor = `hsl(${hue}, 70%, 45%)`;
+                    tile.style.boxShadow = `0 4px 6px hsla(${hue}, 50%, 30%, 0.2)`;
+                }
+                
+                // Posicionar a peça
+                updateTilePosition(tile, row, col);
+                
+                puzzleBoard.appendChild(tile);
+                tiles.push(tile);
+            }
+            
+            // Função para criar peças com imagem
+            function createImageTiles() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const tempSize = Math.min(customImage.width, customImage.height);
+                
+                // Definir o tamanho do canvas quadrado (cortando o excesso)
+                canvas.width = tempSize;
+                canvas.height = tempSize;
+                
+                // Desenhar a imagem centralizada no canvas
+                ctx.drawImage(
+                    customImage, 
+                    (customImage.width - tempSize) / 2, 
+                    (customImage.height - tempSize) / 2, 
+                    tempSize, 
+                    tempSize, 
+                    0, 
+                    0, 
+                    tempSize, 
+                    tempSize
+                );
+                
+                // Calcular o tamanho de cada peça na imagem
+                const pieceSize = tempSize / size;
+                
+                // Para cada peça, cortar a parte correspondente da imagem
+                tiles.forEach(tile => {
+                    const value = parseInt(tile.dataset.value);
+                    const pos = getPositionFromValue(value);
+                    
+                    // Criar um canvas para a peça individual
+                    const pieceCanvas = document.createElement('canvas');
+                    const pieceCtx = pieceCanvas.getContext('2d');
+                    pieceCanvas.width = pieceSize;
+                    pieceCanvas.height = pieceSize;
+                    
+                    // Cortar a parte da imagem
+                    pieceCtx.drawImage(
+                        canvas,
+                        pos.col * pieceSize, 
+                        pos.row * pieceSize,
+                        pieceSize, 
+                        pieceSize,
+                        0, 
+                        0,
+                        pieceSize, 
+                        pieceSize
+                    );
+                    
+                    // Criar uma imagem da peça
+                    const pieceImage = new Image();
+                    pieceImage.src = pieceCanvas.toDataURL();
+                    
+                    // Limpar o conteúdo da peça (números) e adicionar a imagem
+                    tile.innerHTML = '';
+                    tile.appendChild(pieceImage);
+                });
+            }
+            
+            // Função para atualizar a posição de uma peça
+            function updateTilePosition(tile, row, col) {
+                tile.style.width = `${tileSize}%`;
+                tile.style.height = `${tileSize}%`;
+                tile.style.left = `${col * tileSize}%`;
+                tile.style.top = `${row * tileSize}%`;
+                
+                // Atualizar atributos de dados
+                tile.dataset.row = row;
+                tile.dataset.col = col;
+            }
+            
+            // Função para adicionar manipuladores de clique às peças
+            function addTileClickHandlers() {
+                tiles.forEach(tile => {
+                    tile.addEventListener('click', function() {
+                        if (isShuffling) return;
+                        
+                        const row = parseInt(this.dataset.row);
+                        const col = parseInt(this.dataset.col);
+                        
+                        if (canMove(row, col)) {
+                            moveTile(this, row, col);
+                            movesCount++;
+                            movesCountDisplay.textContent = movesCount;
+                            
+                            if (isSolved()) {
+                                showWinMessage();
+                            }
+                        }
+                    });
+                    
+                    // Efeito hover
+                    tile.addEventListener('mouseenter', function() {
+                        if (isShuffling) return;
+                        
+                        const row = parseInt(this.dataset.row);
+                        const col = parseInt(this.dataset.col);
+                        
+                        if (canMove(row, col)) {
+                            this.classList.add('highlight');
+                        }
+                    });
+                    
+                    tile.addEventListener('mouseleave', function() {
+                        this.classList.remove('highlight');
+                    });
+                });
+            }
+            
+            // Função para verificar se uma peça pode se mover
+            function canMove(row, col) {
+                return (
+                    (Math.abs(row - emptyPos.row) === 1 && col === emptyPos.col) ||
+                    (Math.abs(col - emptyPos.col) === 1 && row === emptyPos.row)
+                );
+            }
+            
+            // Função para mover uma peça
+            function moveTile(tile, row, col) {
+                // Salvar a posição atual da peça
+                const oldRow = row;
+                const oldCol = col;
+                
+                // Mover a peça para a posição vazia
+                updateTilePosition(tile, emptyPos.row, emptyPos.col);
+                
+                // Atualizar a posição vazia
+                emptyPos = { row: oldRow, col: oldCol };
+                
+                // Remover destaque
+                tile.classList.remove('highlight');
+            }
+            
+            // Função para embaralhar o puzzle
+            function shufflePuzzle() {
+                if (isShuffling) return;
+                
+                isShuffling = true;
+                shuffleBtn.disabled = true;
+                resetBtn.disabled = true;
+                movesCount = 0;
+                movesCountDisplay.textContent = movesCount;
+                
+                // Número de movimentos para embaralhar
+                const shuffleMoves = size * size * 20;
+                let movesDone = 0;
+                
+                const shuffleInterval = setInterval(() => {
+                    if (movesDone >= shuffleMoves) {
+                        clearInterval(shuffleInterval);
+                        isShuffling = false;
+                        shuffleBtn.disabled = false;
+                        resetBtn.disabled = false;
+                        startTime = new Date(); // Resetar o tempo após embaralhar
+                        return;
+                    }
+                    
+                    // Encontrar peças adjacentes ao espaço vazio
+                    const movableTiles = tiles.filter(tile => {
+                        const row = parseInt(tile.dataset.row);
+                        const col = parseInt(tile.dataset.col);
+                        return canMove(row, col);
+                    });
+                    
+                    // Escolher uma peça aleatória para mover
+                    if (movableTiles.length > 0) {
+                        const randomTile = movableTiles[Math.floor(Math.random() * movableTiles.length)];
+                        const row = parseInt(randomTile.dataset.row);
+                        const col = parseInt(randomTile.dataset.col);
+                        
+                        moveTile(randomTile, row, col);
+                        movesDone++;
+                    }
+                }, 10);
+            }
+            
+            // Função para verificar se o puzzle está resolvido
+            function isSolved() {
+                for (let i = 0; i < tiles.length; i++) {
+                    const tile = tiles[i];
+                    const value = parseInt(tile.dataset.value);
+                    const row = parseInt(tile.dataset.row);
+                    const col = parseInt(tile.dataset.col);
+                    
+                    const correctPos = getPositionFromValue(value);
+                    if (row !== correctPos.row || col !== correctPos.col) {
+                        return false;
+                    }
+                }
+                
+                return emptyPos.row === size - 1 && emptyPos.col === size - 1;
+            }
+            
+            // Função para obter a posição correta de um valor
+            function getPositionFromValue(value) {
+                const index = value - 1;
+                return {
+                    row: Math.floor(index / size),
+                    col: index % size
+                };
+            }
+            
+            // Função para mostrar mensagem de vitória
+            function showWinMessage() {
+                const endTime = new Date();
+                const timeDiff = (endTime - startTime) / 1000; // em segundos
+                const minutes = Math.floor(timeDiff / 60);
+                const seconds = Math.floor(timeDiff % 60);
+                
+                let timeString = '';
+                if (minutes > 0) {
+                    timeString = `${minutes} minuto${minutes > 1 ? 's' : ''} e ${seconds} segundo${seconds !== 1 ? 's' : ''}`;
+                } else {
+                    timeString = `${seconds} segundo${seconds !== 1 ? 's' : ''}`;
+                }
+                
+                winText.textContent = `Você completou o puzzle em ${movesCount} movimentos e ${timeString}!`;
+                winMessage.style.display = 'flex';
+            }
+        });
+    </script>
+</body>
+</html>
